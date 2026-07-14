@@ -11,10 +11,10 @@ sed -i "s/:80/:${PORT_TO_USE}/" /etc/apache2/sites-available/000-default.conf
 php artisan storage:link || true
 php artisan db:seed || true
 php artisan migrate --force || true
-php artisan optimize
+php artisan optimize || true
 
 
-apache2-foreground
+exec apache2-foreground
 
 
 
