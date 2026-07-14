@@ -21,6 +21,17 @@ COPY vite.config.js ./
 RUN npm run build
 
 
+# Verify that Vite generated the manifest
+RUN test -f public/build/manifest.json \
+    && echo "Frontend build completed successfully" \
+    && ls -la public/build
+
+
+
+
+# --------------------------------------------------
+# Stage 2: Laravel PHP and Apache
+# --------------------------------------------------
 FROM php:8.4-apache
 
 
@@ -30,7 +41,6 @@ ENV COMPOSER_ALLOW_SUPERUSER=1 \
     APACHE_DOCUMENT_ROOT=/var/www/html/public
 
 
-# Install OS libraries needed for PHP extensions
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
@@ -62,7 +72,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 
-# Enable Apache rewrite and Point DocumentRoot to Laravel public/
 RUN a2enmod rewrite \
     && sed -ri \
         -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' \
@@ -72,34 +81,38 @@ RUN a2enmod rewrite \
         /etc/apache2/conf-available/*.conf
 
 
-# Copy Composer binary
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 
 WORKDIR /var/www/html
 
 
-# Cache Composer dependency layer
 COPY composer.json composer.lock ./
 
 
-# Diagnose platform requirements, then install production dependencies
-RUN php -v \
-    && php -m \
-    && composer install \
-        --no-dev \
-        --prefer-dist \
-        --no-interaction \
-        --no-progress \
-        --optimize-autoloader \
-        --no-scripts
+RUN composer install \
+    --no-dev \
+    --prefer-dist \
+    --no-interaction \
+    --no-progress \
+    --optimize-autoloader \
+    --no-scripts
 
 
-# Copy application source (vendor is excluded via .dockerignore)
+# Copy Laravel application
 COPY . .
 
 
-# Ensure Laravel writable directories exist
+# Copy compiled frontend assets
+COPY --from=frontend /app/public/build /var/www/html/public/build
+
+
+# Verify final manifest location
+RUN test -f /var/www/html/public/build/manifest.json \
+    && echo "Vite manifest successfully copied" \
+    && ls -la /var/www/html/public/build
+
+
 RUN mkdir -p \
         storage/framework/cache/data \
         storage/framework/sessions \
@@ -116,14 +129,9 @@ RUN mkdir -p \
     && chmod +x docker/start.sh
 
 
-RUN chown -R www-data:www-data storage bootstrap/cache \
-    && chmod -R 775 storage bootstrap/cache
-
-
 EXPOSE 80
 
 
 CMD ["./docker/start.sh"]
-
 
 
