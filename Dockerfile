@@ -1,3 +1,26 @@
+# --------------------------------------------------
+# Stage 1: Build frontend assets using Node
+# --------------------------------------------------
+FROM node:20-alpine AS frontend
+
+
+WORKDIR /app
+
+
+COPY package.json package-lock.json ./
+
+
+RUN npm ci
+
+
+COPY resources ./resources
+COPY public ./public
+COPY vite.config.js ./
+
+
+RUN npm run build
+
+
 FROM php:8.4-apache
 
 
