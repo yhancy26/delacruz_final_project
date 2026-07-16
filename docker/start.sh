@@ -1,12 +1,3 @@
-# Set correct ownership for Laravel folders
-chown -R www-data:www-data /var/www/html/storage
-chown -R www-data:www-data /var/www/html/bootstrap/cache
-
-# Set permissions so the group can write to them
-chmod -R 775 /var/www/html/storage
-chmod -R 775 /var/www/html/bootstrap/cache
-
-
 #!/usr/bin/env bash
 set -euo pipefail
 
