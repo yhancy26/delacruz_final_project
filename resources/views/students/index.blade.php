@@ -77,7 +77,7 @@
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-gray-700/80" id="student-table">
                             @forelse ($students as $student)
-                                <tr class="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors">
+                                <tr id="student-row-{{ $student->id }}" class="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors">
                                     <td class="px-6 py-4 text-gray-900 dark:text-gray-100 font-medium whitespace-nowrap">
                                         {{ $student->first_name }}
                                     </td>
@@ -162,6 +162,62 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             if (typeof Echo !== 'undefined') {
+
+                function showRealtimeAlert(message) {
+                    const alertContainer = document.getElementById('student-alert');
+                    if (alertContainer) {
+                        alertContainer.innerHTML = `
+                            <div class="px-4 py-3 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/30 text-sm text-blue-700 dark:text-blue-300 transition-all duration-300">
+                                ${message}
+                            </div>
+                        `;
+                        setTimeout(() => {
+                            alertContainer.innerHTML = '';
+                        }, 5000);
+                    }
+                }
+
+                function buildRowHtml(data) {
+                    return `
+                        <td class="px-6 py-4 text-gray-900 dark:text-gray-100 font-medium whitespace-nowrap">
+                            ${data.first_name}
+                        </td>
+                        <td class="px-6 py-4 text-gray-900 dark:text-gray-100 font-medium whitespace-nowrap">
+                            ${data.last_name}
+                        </td>
+                        <td class="px-6 py-4 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                            ${data.email}
+                        </td>
+                        <td class="px-6 py-4 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-mono text-xs">
+                                ${data.student_number}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 text-xs font-semibold">
+                                ${data.year_level}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                            ${data.course}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right">
+                            <div class="inline-flex items-center gap-2">
+                                <a href="/students/${data.id}/edit" class="inline-flex items-center px-3 py-1.5 rounded-md border border-gray-300 dark:border-gray-600 text-xs font-semibold uppercase tracking-wide text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                                    Edit
+                                </a>
+                                <form method="POST" action="/students/${data.id}" onsubmit="return confirm('Are you sure you want to delete this student?');">
+                                    <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').getAttribute('content')}">
+                                    <input type="hidden" name="_method" value="DELETE">
+                                    <button type="submit" class="inline-flex items-center px-3 py-1.5 rounded-md border border-red-200 dark:border-red-800 text-xs font-semibold uppercase tracking-wide text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition">
+                                        Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    `;
+                }
+
                 Echo.channel('students')
                     .listen('.student.created', (data) => {
                         const noStudentsRow = document.getElementById('no-students-row');
@@ -172,61 +228,48 @@
                         const tableBody = document.getElementById('student-table');
                         if (tableBody) {
                             const newRow = document.createElement('tr');
+                            newRow.id = `student-row-${data.id}`;
                             newRow.className = "bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors border-b border-gray-100 dark:border-gray-700/80";
-                            
-                            newRow.innerHTML = `
-                                <td class="px-6 py-4 text-gray-900 dark:text-gray-100 font-medium whitespace-nowrap">
-                                    ${data.first_name}
-                                </td>
-                                <td class="px-6 py-4 text-gray-900 dark:text-gray-100 font-medium whitespace-nowrap">
-                                    ${data.last_name}
-                                </td>
-                                <td class="px-6 py-4 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                                    ${data.email}
-                                </td>
-                                <td class="px-6 py-4 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                                    <span class="inline-flex items-center px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-mono text-xs">
-                                        ${data.student_number}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 text-xs font-semibold">
-                                        ${data.year_level}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                                    ${data.course}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right">
-                                    <div class="inline-flex items-center gap-2">
-                                        <a href="/students/${data.id}/edit" class="inline-flex items-center px-3 py-1.5 rounded-md border border-gray-300 dark:border-gray-600 text-xs font-semibold uppercase tracking-wide text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-                                            Edit
-                                        </a>
-                                        <form method="POST" action="/students/${data.id}" onsubmit="return confirm('Are you sure you want to delete this student?');">
-                                            <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').getAttribute('content')}">
-                                            <input type="hidden" name="_method" value="DELETE">
-                                            <button type="submit" class="inline-flex items-center px-3 py-1.5 rounded-md border border-red-200 dark:border-red-800 text-xs font-semibold uppercase tracking-wide text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition">
-                                                Delete
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            `;
+                            newRow.innerHTML = buildRowHtml(data);
 
                             tableBody.insertBefore(newRow, tableBody.firstChild);
 
-                            const alertContainer = document.getElementById('student-alert');
-                            if (alertContainer) {
-                                alertContainer.innerHTML = `
-                                    <div class="px-4 py-3 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/30 text-sm text-blue-700 dark:text-blue-300 transition-all duration-300">
-                                        A new student (<strong>${data.first_name} ${data.last_name}</strong>) has been added in real-time by another user!
-                                    </div>
-                                `;
-                                setTimeout(() => {
-                                    alertContainer.innerHTML = '';
-                                }, 5000);
-                            }
+                            showRealtimeAlert(`A new student (<strong>${data.first_name} ${data.last_name}</strong>) has been added in real-time by another user!`);
                         }
+                    })
+                    .listen('.student.updated', (data) => {
+                        const row = document.getElementById(`student-row-${data.id}`);
+                        if (row) {
+                            row.innerHTML = buildRowHtml(data);
+                        }
+
+                        showRealtimeAlert(`<strong>${data.first_name} ${data.last_name}</strong>'s record was just updated in real-time by another user!`);
+                    })
+                    .listen('.student.deleted', (data) => {
+                        const row = document.getElementById(`student-row-${data.id}`);
+                        if (row) {
+                            row.remove();
+                        }
+
+                        const tableBody = document.getElementById('student-table');
+                        if (tableBody && tableBody.children.length === 0) {
+                            tableBody.innerHTML = `
+                                <tr id="no-students-row">
+                                    <td colspan="7" class="px-6 py-16 text-center">
+                                        <div class="mx-auto max-w-sm">
+                                            <p class="text-base font-medium text-gray-900 dark:text-gray-100">
+                                                No students yet
+                                            </p>
+                                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                                Add your first student to start building the list.
+                                            </p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `;
+                        }
+
+                        showRealtimeAlert(`A student record was deleted in real-time by another user.`);
                     });
             } else {
                 console.warn('Laravel Echo is not defined. Make sure you are running npm run dev.');
@@ -234,5 +277,3 @@
         });
     </script>
 </x-app-layout>
-
-```
