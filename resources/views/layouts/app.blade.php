@@ -11,6 +11,17 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
+        <script>
+            window.Laravel = {
+                reverb: {
+                    key: @js(config('broadcasting.connections.reverb.key')),
+                    host: @js(config('broadcasting.connections.reverb.options.host')),
+                    port: @js((int) config('broadcasting.connections.reverb.options.port')),
+                    scheme: @js(config('broadcasting.connections.reverb.options.scheme')),
+                },
+            };
+        </script>
+
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
