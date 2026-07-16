@@ -35,10 +35,6 @@ class StudentCreated implements ShouldBroadcastNow
             'email' => $this->student->email,
             'course' => $this->student->course,
             'year_level' => $this->student->year_level,
-            // 👇 Added these crucial attributes for your frontend row builder!
-            'year_level_label' => $this->student->year_level_label,
-            'edit_url'         => $this->student->edit_url,
-            'destroy_url'      => $this->student->destroy_url,
         ];
     }
 }
